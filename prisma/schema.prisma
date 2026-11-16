@@ -10,7 +10,29 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
-  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+
+model User {
+  id            String    @id @default(cuid())
+  gender        Int
+  birth_date    DateTime
+  account Account?
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("users")
+}
+
+model Account {
+  id            String    @id @default(cuid())
+  userId String @unique
+  user  User @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  name  String  @db.VarChar(100)
+  email         String?   @unique @db.VarChar(255)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("accounts")
 }
