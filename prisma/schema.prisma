@@ -13,26 +13,76 @@ datasource db {
 }
 
 
-model User {
+model WithdrawalReason {
   id            String    @id @default(cuid())
-  gender        Int
-  birth_date    DateTime
-  account Account?
+  name String @db.VarChar(20)
+  order Int
+  user  User[]
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("withdrawal_reasons")
+}
+
+model User {
+  id            String    @id @default(cuid())
+
+  withdrawalReasonId  String?
+  withdrawalReason WithdrawalReason? @relation(fields: [withdrawalReasonId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  withdrawalReasonDetail String? @db.Text
+  withdrawalAt  DateTime?  @map("withdrawal_at") @db.Timestamp(0)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
 
   @@map("users")
 }
 
 model Account {
   id            String    @id @default(cuid())
-  userId String @unique
+  userId String @unique @map("user_id")
   user  User @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  name  String  @db.VarChar(100)
-  email         String?   @unique @db.VarChar(255)
-  emailVerified DateTime?
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
 
+  type               String
+  provider           String
+  providerAccountId  String  @map("provider_account_id")
+  refresh_token      String? @db.Text
+  refresh_token_expires_in  Int?
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
+
+
+  @@unique([provider, providerAccountId])
   @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+ 
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
