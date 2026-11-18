@@ -7,7 +7,6 @@ import React from 'react'
 export const Header = () => {
   const { data: session } = useSession();
   const user = session?.user;
-  console.log(user);
   return (
     <header className="bg-slate-600 text-gray-100 shadow-lg">
       <nav className="flex items-center justify-between p-4">
@@ -32,7 +31,7 @@ export const Header = () => {
               width={50}
               height={50}
               alt="profile_icon"
-              src={"/default_icon.png"}
+              src={user?.image || "/default_icon.png"}
             />
           </Link>
         </div>
