@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -12,57 +7,53 @@ datasource db {
   provider = "postgresql"
 }
 
-
 model WithdrawalReason {
-  id            String    @id @default(cuid())
-  name String @db.VarChar(20)
-  order Int
-  user  User[]
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
+  id        String   @id @default(cuid())
+  name      String   @db.VarChar(20)
+  order     Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
+  user      User[]
 
   @@map("withdrawal_reasons")
 }
 
 model User {
-  id            String    @id @default(cuid())
-
-  withdrawalReasonId  String?
-  withdrawalReason WithdrawalReason? @relation(fields: [withdrawalReasonId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  withdrawalReasonDetail String? @db.Text
-  withdrawalAt  DateTime?  @map("withdrawal_at") @db.Timestamp(0)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
-
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime? @map("email_verified")
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
+  id                     String            @id @default(cuid())
+  withdrawalReasonId     String?
+  withdrawalReasonDetail String?
+  withdrawalAt           DateTime?         @map("withdrawal_at") @db.Timestamp(0)
+  createdAt              DateTime          @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt              DateTime          @updatedAt @map("updated_at") @db.Timestamp(0)
+  name                   String?
+  email                  String?           @unique
+  emailVerified          DateTime?         @map("email_verified")
+  image                  String?
+  accounts               Account?
+  sessions               Session[]
+  classificationSchemes  ClassificationScheme[]
+  withdrawalReason       WithdrawalReason? @relation(fields: [withdrawalReasonId], references: [id], onDelete: Restrict, onUpdate: NoAction)
 
   @@map("users")
 }
 
 model Account {
-  id            String    @id @default(cuid())
-  userId String @unique @map("user_id")
-  user  User @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: NoAction)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
-
-  type               String
-  provider           String
-  providerAccountId  String  @map("provider_account_id")
-  refresh_token      String? @db.Text
-  refresh_token_expires_in  Int?
-  access_token       String? @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String? @db.Text
-  session_state      String?
-
+  id                       String   @id @default(cuid())
+  userId                   String   @unique @map("user_id")
+  createdAt                DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt                DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
+  type                     String
+  provider                 String
+  providerAccountId        String   @map("provider_account_id")
+  refresh_token            String?
+  refresh_token_expires_in Int?
+  access_token             String?
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?
+  session_state            String?
+  user                     User     @relation(fields: [userId], references: [id], onUpdate: NoAction)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -74,7 +65,7 @@ model Session {
   userId       String   @map("user_id")
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   @@map("sessions")
 }
 
@@ -82,7 +73,60 @@ model VerificationToken {
   identifier String
   token      String
   expires    DateTime
- 
+
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model ClassificationScheme {
+  id           String   @id @default(cuid())
+  userId       String?   @map("user_id")
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  name  String  @db.VarChar(30)
+  description String?  @db.Text
+  axes  Axis[]
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("classification_schemes")
+
+}
+
+model Axis {
+  id           String   @id @default(cuid())
+  classificationSchemeId  String  @map("classification_scheme_id")
+  classificationScheme  ClassificationScheme @relation(fields: [classificationSchemeId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  name  String  @db.VarChar(10)
+  axisOptions AxisOption[]
+  verticalAxisDomain  Domain[]  @relation("VerticalAxis")  
+  horizontalAxisDomain  Domain[]  @relation("HorizontalAxis")  
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("axes")
+}
+
+model AxisOption {
+  id           String   @id @default(cuid())
+  axisId  String  @map("axis_id")
+  axis  Axis @relation(fields: [axisId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  name  String  @db.VarChar(10)
+  isPositive  Boolean
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("axis_options")
+}
+
+model Domain {
+  id           String   @id @default(cuid())
+  verticalAxisId String  @map("vertical_axis_id")
+  horizontalAxisId String  @map("horizontal_axis_id")
+  verticalAxis Axis @relation("VerticalAxis", fields: [verticalAxisId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  horizontalAxis Axis @relation("HorizontalAxis", fields: [horizontalAxisId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  name String @db.VarChar(20)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("domains")
 }
